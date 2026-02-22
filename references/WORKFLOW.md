@@ -57,21 +57,50 @@ Phase 2 — Implement step-by-step per the plan:
   Any deviation from the doc must be recorded in §8.
   Keep files < ~500 LOC; split/refactor if larger.
   Before editing, run git status to check for unrecognized changes from other agents.
-Phase 3 — git add -A && git commit -m "feat: {slug} (DD-{dd_id})"
+Phase 3 — Self-review before commit. Check:
+  [ ] Code compiles / builds without errors
+  [ ] Tests pass (existing + new)
+  [ ] No hardcoded paths, secrets, or debug leftovers
+  [ ] Files stay under ~500 LOC
+  [ ] Changes match the DesignDoc scope (no scope creep)
+  [ ] Deviations recorded in §8
+Phase 4 — git add -A && git commit -m "feat: {slug} (DD-{dd_id})"
   Do NOT push. The orchestrator handles push after review.
 
-Output the file manifest and test results when done. Stay technical.
+Output using this handoff format:
+  ## 完成摘要
+  <1-3 句：做了什么，当前状态>
+  ## 变更文件
+  - `file:line` — 简要说明
+  ## 测试结果
+  <build/test 命令 + 结果>
+  ## 偏差记录
+  <§8 中新增的条目，或"无偏差">
+  ## 风险与后续
+  - <已知风险或待做事项>
 ```
 
 ---
 
 ## Notes
 
+### Priority Stack (when rules conflict)
+1. **Safety & correctness** — don't break existing behavior, don't leak secrets
+2. **Design fidelity** — follow the DesignDoc; deviate only with §8 record
+3. **Quality** — tests, lint, 500 LOC limit, self-review
+4. **Delivery** — output format, language, reporting
+
 - The implementation agent's Phase 1 plan output is expected — do not skip it.
 - Timeout: `runTimeoutSeconds: 43200` (12 hours) for complex implementations.
 - git config: always use local config (no `--global`).
 - Global assets (template, scripts, ID counter): `{workspace}/docs/design/`
 - Project-specific docs: `{repo_root}/docs/design/`
+
+### Context Gathering Budget
+- **First round: 5–8 tool calls max** for reading/exploring the codebase.
+- If more are needed, record why in the plan output.
+- Prefer targeted queries (`grep`, `find`, read specific files) over directory-level scans.
+- **Early stop:** once you can name the specific files/functions to modify, stop exploring and start coding.
 
 ### Code Quality
 - **Keep files < ~500 LOC.** If a file grows past this, split/refactor. Large files are hard to review and maintain.
