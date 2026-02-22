@@ -33,7 +33,7 @@ Output a 3-5 sentence summary when done. Stay technical.
 ## Implementation Agent Task Template
 
 ```
-Implement code per DD-{dd_id}. The doc is already in the repo — only write code, do not modify docs/.
+Implement code per DD-{dd_id}. The doc is already in the repo — only write code, do not modify docs/ except for §8 (Decision Log) where deviations must be recorded.
 
 Document: {repo_root}/docs/design/{dd_id}-{slug}.md
 
