@@ -10,7 +10,7 @@ Core rules:
 7. **Clean before publish** — DD docs, legacy source, and temp files must not reach the public repo.
 8. **Audit before push** — Spawn an independent agent to verify build, references, and CI readiness.
 
-**{design_model} = Design** | **{implement_model} = Implementation**
+**{design_model} = Design** | **{implement_model} = Implementation** | **{language} = Output language (default: 中文)**
 
 ---
 
@@ -18,6 +18,7 @@ Core rules:
 
 ```
 Write a DesignDoc and commit it.
+IMPORTANT: All output, summaries, and commit messages must be in {language}.
 
 Requirement: {requirement_description}
 DD ID: DD-{dd_id}
@@ -36,6 +37,7 @@ Output a 3-5 sentence summary when done. Stay technical.
 
 ```
 Implement code per DD-{dd_id}. The doc is already in the repo — only write code, do not modify docs/ except for §8 (Decision Log) where deviations must be recorded.
+IMPORTANT: All output, summaries, and deviation logs must be in {language}. Code comments may remain in English.
 
 Document: {repo_root}/docs/design/{dd_id}-{slug}.md
 
@@ -71,6 +73,7 @@ Output the file manifest and test results when done. Stay technical.
 | `{author_email}` | Git author email for commits | `alice@example.com` |
 | `{design_model}` | Model used for design/doc tasks | `claude-opus-4` |
 | `{implement_model}` | Model used for implementation | `codex-1` |
+| `{language}` | Output language for agent responses | `中文` |
 
 ## Pre-Publish Cleanup (Rule 7)
 
@@ -96,6 +99,7 @@ After cleanup, spawn a **separate** agent (not the one that wrote the code) to i
 
 ```
 Audit the project at {repo_root} before it gets pushed to a public repo. You are NOT the author — you are the reviewer. Be thorough and skeptical.
+IMPORTANT: All output and reports must be in {language}.
 
 ## Step 0: Detect project type
 Explore the repo root and determine what kind of project this is:
