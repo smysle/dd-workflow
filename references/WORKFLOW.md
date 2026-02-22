@@ -7,6 +7,7 @@ Core rules:
 4. **Commit doc before code** — Code commits reference DD-NNNN.
 5. **Plan before executing** — Output plan, then implement step-by-step.
 6. **Log deviations** — Departures from the doc must be recorded in §8.
+7. **Clean before publish** — DD docs, legacy source, and temp files must not reach the public repo.
 
 **{design_model} = Design** | **{implement_model} = Implementation**
 
@@ -70,6 +71,22 @@ Output the file manifest and test results when done. Stay technical.
 | `{design_model}` | Model used for design/doc tasks | `claude-opus-4` |
 | `{implement_model}` | Model used for implementation | `codex-1` |
 
+## Pre-Publish Cleanup (Rule 7)
+
+Before pushing to a public repository, the orchestrating agent MUST:
+
+1. **Remove DD docs from tracked files** — `docs/design/` is internal process documentation, not shipped code.
+   ```bash
+   git rm -r --cached docs/design/ 2>/dev/null
+   echo 'docs/design/' >> .gitignore
+   ```
+2. **Remove reference/legacy source** — If the project was built by rewriting an existing codebase, the original source (e.g. Python `bot/`, old `main.py`, `requirements.txt`) must not be in the public repo. Keep it locally for reference but add to `.gitignore`.
+3. **Remove temp/backup files** — Any `*.bak`, `*.orig`, scratch files generated during implementation.
+4. **Verify .gitignore completeness** — Must cover: build artifacts, config secrets, DB files, editor/OS noise, AND all of the above.
+5. **Commit cleanup** — `git commit -m "chore: pre-publish cleanup"`
+
+This step applies AFTER all implementation phases are complete and BEFORE the first `git push`.
+
 ## Checklist
 
 1. Pick a slug → `bash {workspace}/docs/design/allocate-dd-id.sh <slug>`
@@ -77,4 +94,5 @@ Output the file manifest and test results when done. Stay technical.
 3. Present doc to user for review
 4. Spawn implementation agent (`{implement_model}`, 43200 s timeout) → code + commit
 5. Verify: .gitignore / build / test / two commits / DD status → Implemented
-6. Report results
+6. **Pre-publish cleanup** (Rule 7) — remove internal docs, legacy source, temp files
+7. Push to remote + report results
