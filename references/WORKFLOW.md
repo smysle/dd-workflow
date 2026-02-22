@@ -101,64 +101,123 @@ After cleanup, spawn a **separate** agent (not the one that wrote the code) to i
 Audit the project at {repo_root} before it gets pushed to a public repo. You are NOT the author — you are the reviewer. Be thorough and skeptical.
 IMPORTANT: All output and reports must be in {language}.
 
-## Step 0: Detect project type
-Explore the repo root and determine what kind of project this is:
-  - Look for: Cargo.toml, package.json, pyproject.toml, go.mod, Makefile, Dockerfile, docker-compose.yml, CI workflow files, or none of the above (pure docs/scripts/skill)
-  - This determines which checks below are applicable
+## Step 0: Detect & Inventory
+Explore the repo root and determine:
+  - **Project type:** Cargo.toml, package.json, pyproject.toml, go.mod, Makefile, or pure docs/scripts
+  - **Toolchain version locks:** .nvmrc, rust-toolchain.toml, .python-version, .go-version — do they exist? Are they consistent with what the project actually needs?
+  - **Lock files:** Cargo.lock, package-lock.json, yarn.lock, go.sum, poetry.lock — present? Tracked in git? In sync with manifest?
+  - This determines which checks below are applicable.
 
 ## Checks — apply what's relevant, skip what's not:
 
-### A. ALWAYS do these (all project types):
+### A. ALWAYS (all project types):
 
 1. **Dead path references**
    Scan all source/config files for references to paths that don't exist in git:
    - File includes/embeds (include_bytes!, include_str!, require(), import, source)
-   - Any hardcoded absolute paths (/home/*, /Users/*, /tmp/*)
+   - Hardcoded absolute paths (/home/*, /Users/*, /tmp/*)
    - References to directories removed from git but still present locally
    ```bash
-   # Compare what's in git vs what's local
    git ls-files > /tmp/tracked.txt
-   # Then grep source files for path-like strings and cross-check
+   # grep source files for path-like strings and cross-check
    ```
 
 2. **.gitignore sanity**
-   - List gitignored files that exist locally: `git ls-files --others --ignored --exclude-standard`
-   - Are any of them actually needed for the project to work elsewhere (on CI, on another machine)?
-   - Watch for overly broad rules: `*.sql`, `*.json`, `*.lock` that might catch wanted files
+   - List gitignored files: `git ls-files --others --ignored --exclude-standard`
+   - Are any needed for CI or another machine?
+   - Watch for overly broad rules: `*.sql`, `*.json`, `*.lock` catching wanted files
 
 3. **Secrets scan**
    - grep for API keys, tokens, passwords, private keys in tracked files
-   - Check .env files aren't tracked
+   - Check .env / .env.* files aren't tracked
+   - Scan config example files for real credentials accidentally left in
 
 4. **Residual issues**
-   - grep for TODO, FIXME, HACK, XXX in source files — flag anything that looks like an unfinished task
-   - Check for leftover debug code (console.log, print(), dbg!())
+   - grep for TODO, FIXME, HACK, XXX — flag unfinished tasks
+   - Check for leftover debug code (console.log, print(), dbg!(), println!)
 
-### B. If buildable project (has Cargo.toml / package.json / go.mod / Makefile / etc):
+5. **Lint & format check** (best-effort)
+   - If linter/formatter is available or easy to install, run it:
+     Rust: `cargo fmt --check`, `cargo clippy`
+     Node: `npx eslint .`, `npx prettier --check .`
+     Python: `ruff check .`, `black --check .`
+     Go: `go vet ./...`, `gofmt -l .`
+   - If tool is unavailable, note it in report but don't block
 
-5. **Build verification**
-   - Run the project's build command (cargo build, npm run build, go build, make, etc.)
-   - Run tests if available
-   - Use lock file if present (--locked, --frozen, etc.)
+6. **Dependency vulnerability scan** (best-effort)
+   - If audit tool is available or easy to install, run it:
+     Rust: `cargo audit` (install via `cargo install cargo-audit` if needed)
+     Node: `npm audit --production`
+     Python: `pip-audit` or `safety check`
+     Go: `govulncheck ./...`
+   - Report findings with severity; critical/high = must fix, medium/low = note in report
 
-### C. If has Dockerfile or CI workflow:
+7. **License compliance check** (best-effort)
+   - Scan dependency licenses for conflicts with the project's license
+     Rust: `cargo license` or `cargo deny check licenses`
+     Node: `npx license-checker --summary`
+   - Flag copyleft (GPL/AGPL) dependencies in permissive-licensed projects
+   - If tool unavailable, spot-check major dependencies manually
 
-6. **Dockerfile ↔ git cross-check**
-   - Read the Dockerfile — every COPY/ADD source must exist in git (not just locally)
-   - Verify base image tags are pinned (not just :latest)
+8. **Documentation completeness**
+   - README exists and contains: what the project does, how to build/run, how to configure
+   - If API project: are endpoints documented?
+   - LICENSE file present and matches declared license
 
-7. **CI workflow check**
-   - Read .github/workflows/*.yml (or .gitlab-ci.yml, etc.)
-   - Verify referenced branches, paths, and secrets exist
-   - Check for references to removed files/directories
+### B. If buildable project:
 
-### D. Fix and report
+9. **Build verification**
+   - Run project's build command (cargo build, npm run build, go build, make, etc.)
+   - Use lock file (--locked, --frozen)
+   - Run tests; report any failures
 
-- Fix any issues found
-- Re-run build/test if applicable
-- git add -A && git commit -m "fix: pre-push audit (DD-{dd_id})"
-- If nothing to fix: output "AUDIT CLEAN" with investigation summary
-- List what you checked and what you skipped (with reason)
+10. **Test coverage baseline** (best-effort)
+    - If coverage tool is available:
+      Rust: `cargo tarpaulin --out summary` or `cargo llvm-cov`
+      Node: `npx jest --coverage` or `npx c8 report`
+    - Report coverage %; flag if core logic < 60%
+    - If tool unavailable, note in report
+
+11. **Build artifact analysis** (informational)
+    - Binary size (Rust: `ls -lh target/release/`)
+    - Bundle size (Node: `du -sh dist/`)
+    - Flag unusually large artifacts; suggest `cargo bloat` or `webpack-bundle-analyzer` if applicable
+
+### C. If has Dockerfile or CI:
+
+12. **Dockerfile ↔ git cross-check**
+    - Every COPY/ADD source must exist in git
+    - Base image tags pinned (not just :latest)
+    - **Best practices:** multi-stage build? Non-root user? Minimal final image?
+    - Suggest `docker scout` or `trivy image` scan if available
+
+13. **CI workflow check**
+    - Read .github/workflows/*.yml (or .gitlab-ci.yml, etc.)
+    - Verify branches, paths, secrets references
+    - Check for references to removed files/directories
+
+14. **IaC config check** (if applicable)
+    - If Terraform/K8s/Helm/docker-compose files exist:
+      validate syntax, check for hardcoded secrets, verify resource limits
+
+### D. Report
+
+Output a structured report with:
+
+- **Issues found & fixed** — what was broken, what you did
+- **Quality metrics** (where available):
+  - Test coverage %
+  - Lint warnings count
+  - Dependency vulnerabilities (critical/high/medium/low)
+  - Binary/bundle size
+- **Tech debt inventory** — consolidated TODO/FIXME list with file:line, suggested priority
+- **Skipped checks** — what and why (tool unavailable, not applicable, etc.)
+- **Verdict:** AUDIT CLEAN / AUDIT PASSED WITH NOTES / AUDIT FAILED (blocking issues)
+
+If fixes were made:
+  git add -A && git commit -m "fix: pre-push audit (DD-{dd_id})"
+If nothing to fix:
+  output "AUDIT CLEAN" with full report
 ```
 
 ### Why a separate agent?
