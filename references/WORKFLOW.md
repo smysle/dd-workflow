@@ -12,13 +12,23 @@ Core rules:
 
 **{design_model} = Design** | **{implement_model} = Implementation** | **{language} = Output language (default: 中文)**
 
+### Language Protocol
+| 场景 | 语言 |
+|------|------|
+| 代码、代码注释、变量名 | English |
+| git commit messages | English |
+| DesignDoc 正文 | `{language}` |
+| §8 Decision Log | `{language}` |
+| 代理输出/汇报/报告 | `{language}` |
+| README 及用户文档 | `{language}` |
+
 ---
 
 ## Design Agent Task Template
 
 ```
 Write a DesignDoc and commit it.
-IMPORTANT: All output, summaries, and commit messages must be in {language}.
+Language protocol: code/commits in English, all other output in {language}.
 
 Requirement: {requirement_description}
 DD ID: DD-{dd_id}
@@ -37,7 +47,7 @@ Output a 3-5 sentence summary when done. Stay technical.
 
 ```
 Implement code per DD-{dd_id}. The doc is already in the repo — only write code, do not modify docs/ except for §8 (Decision Log) where deviations must be recorded.
-IMPORTANT: All output, summaries, and deviation logs must be in {language}. Code comments may remain in English.
+Language protocol: code/commits in English, all other output (summaries, deviation logs, reports) in {language}.
 
 Document: {repo_root}/docs/design/{dd_id}-{slug}.md
 
@@ -99,7 +109,7 @@ After cleanup, spawn a **separate** agent (not the one that wrote the code) to i
 
 ```
 Audit the project at {repo_root} before it gets pushed to a public repo. You are NOT the author — you are the reviewer. Be thorough and skeptical.
-IMPORTANT: All output and reports must be in {language}.
+Language protocol: code/commits in English, all other output in {language}.
 
 ## Step 0: Detect & Inventory
 Explore the repo root and determine:
