@@ -55,7 +55,10 @@ Phase 1 — Read the document, output an execution plan.
 Phase 2 — Implement step-by-step per the plan:
   .gitignore → project init → source code → dependency install → build → test
   Any deviation from the doc must be recorded in §8.
+  Keep files < ~500 LOC; split/refactor if larger.
+  Before editing, run git status to check for unrecognized changes from other agents.
 Phase 3 — git add -A && git commit -m "feat: {slug} (DD-{dd_id})"
+  Do NOT push. The orchestrator handles push after review.
 
 Output the file manifest and test results when done. Stay technical.
 ```
@@ -69,6 +72,18 @@ Output the file manifest and test results when done. Stay technical.
 - git config: always use local config (no `--global`).
 - Global assets (template, scripts, ID counter): `{workspace}/docs/design/`
 - Project-specific docs: `{repo_root}/docs/design/`
+
+### Code Quality
+- **Keep files < ~500 LOC.** If a file grows past this, split/refactor. Large files are hard to review and maintain.
+- Bugs: add a regression test when it fits.
+- Prefer end-to-end verification; if blocked, state what's missing.
+
+### Git Safety
+- **Safe by default:** `git status`, `git diff`, `git log` are always ok.
+- **Push only when explicitly asked** by the orchestrator or user.
+- **No destructive ops** without explicit consent: `reset --hard`, `clean`, `force push`, `rebase` on shared branches.
+- **No amend** unless asked.
+- **Multi-agent awareness:** Before editing, run `git status` / `git diff` to check for unrecognized changes. If found, assume another agent made them — continue your work, ship small commits, and flag conflicts to the orchestrator instead of overwriting.
 
 ## Variables
 
