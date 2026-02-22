@@ -95,36 +95,66 @@ After cleanup, spawn a **separate** agent (not the one that wrote the code) to i
 ### Audit Agent Task Template
 
 ```
-Audit the project at {repo_root} for CI and build readiness. You are NOT the author — you are the reviewer. Be thorough and skeptical.
+Audit the project at {repo_root} before it gets pushed to a public repo. You are NOT the author — you are the reviewer. Be thorough and skeptical.
 
-## Checks (do ALL of them):
+## Step 0: Detect project type
+Explore the repo root and determine what kind of project this is:
+  - Look for: Cargo.toml, package.json, pyproject.toml, go.mod, Makefile, Dockerfile, docker-compose.yml, CI workflow files, or none of the above (pure docs/scripts/skill)
+  - This determines which checks below are applicable
 
-### 1. Dead path references
-Scan all source files for references to paths that don't exist in git:
-  - include_bytes!, include_str!, mod declarations, path imports
-  - Any hardcoded absolute paths (/home/*, /tmp/*)
-  - References to directories removed from git but present locally
+## Checks — apply what's relevant, skip what's not:
 
-### 2. .gitignore vs Dockerfile cross-check
-  - List all gitignored files that exist locally (excluding target/, node_modules/)
-  - Read the Dockerfile — verify every COPY source is tracked in git
-  - Flag any mismatch
+### A. ALWAYS do these (all project types):
 
-### 3. Build verification
-  - cargo build --workspace --locked (or equivalent)
-  - cargo test --workspace
-  - If Dockerfile exists: verify COPY sources, verify base image tags
+1. **Dead path references**
+   Scan all source/config files for references to paths that don't exist in git:
+   - File includes/embeds (include_bytes!, include_str!, require(), import, source)
+   - Any hardcoded absolute paths (/home/*, /Users/*, /tmp/*)
+   - References to directories removed from git but still present locally
+   ```bash
+   # Compare what's in git vs what's local
+   git ls-files > /tmp/tracked.txt
+   # Then grep source files for path-like strings and cross-check
+   ```
 
-### 4. Residual issues
-  - grep for TODO, FIXME, HACK, unimplemented!, todo!
-  - Check for secrets/tokens accidentally committed
-  - Verify CI workflow files reference correct branches and paths
+2. **.gitignore sanity**
+   - List gitignored files that exist locally: `git ls-files --others --ignored --exclude-standard`
+   - Are any of them actually needed for the project to work elsewhere (on CI, on another machine)?
+   - Watch for overly broad rules: `*.sql`, `*.json`, `*.lock` that might catch wanted files
 
-### 5. Fix and commit
-  - Fix any issues found
-  - cargo check/build/test after fixes
-  - git add -A && git commit -m "fix: pre-push audit (DD-{dd_id})"
-  - If nothing to fix: output "AUDIT CLEAN" with investigation summary
+3. **Secrets scan**
+   - grep for API keys, tokens, passwords, private keys in tracked files
+   - Check .env files aren't tracked
+
+4. **Residual issues**
+   - grep for TODO, FIXME, HACK, XXX in source files — flag anything that looks like an unfinished task
+   - Check for leftover debug code (console.log, print(), dbg!())
+
+### B. If buildable project (has Cargo.toml / package.json / go.mod / Makefile / etc):
+
+5. **Build verification**
+   - Run the project's build command (cargo build, npm run build, go build, make, etc.)
+   - Run tests if available
+   - Use lock file if present (--locked, --frozen, etc.)
+
+### C. If has Dockerfile or CI workflow:
+
+6. **Dockerfile ↔ git cross-check**
+   - Read the Dockerfile — every COPY/ADD source must exist in git (not just locally)
+   - Verify base image tags are pinned (not just :latest)
+
+7. **CI workflow check**
+   - Read .github/workflows/*.yml (or .gitlab-ci.yml, etc.)
+   - Verify referenced branches, paths, and secrets exist
+   - Check for references to removed files/directories
+
+### D. Fix and report
+
+- Fix any issues found
+- Re-run build/test if applicable
+- git add -A && git commit -m "fix: pre-push audit (DD-{dd_id})"
+- If nothing to fix: output "AUDIT CLEAN" with investigation summary
+- List what you checked and what you skipped (with reason)
 ```
 
 ### Why a separate agent?
