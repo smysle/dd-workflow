@@ -56,8 +56,9 @@ _What to do if things go wrong?_
 
 ## 8. Decision Log / 决策变更记录
 
-_Record any deviations from this document during implementation._
+_Record deviations, completions, and status changes during implementation._
+_Each phase completion and publish action should also be logged._
 
-| Date | Change | Reason |
-|------|--------|--------|
-| | | |
+| Date | Phase | Change | Reason |
+|------|-------|--------|--------|
+| | | | |
