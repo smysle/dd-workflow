@@ -8,6 +8,7 @@ Core rules:
 5. **Plan before executing** — Output plan, then implement step-by-step.
 6. **Log deviations** — Departures from the doc must be recorded in §8.
 7. **Clean before publish** — DD docs, legacy source, and temp files must not reach the public repo.
+8. **Audit before push** — Spawn an independent agent to verify build, references, and CI readiness.
 
 **{design_model} = Design** | **{implement_model} = Implementation**
 
@@ -85,7 +86,53 @@ Before pushing to a public repository, the orchestrating agent MUST:
 4. **Verify .gitignore completeness** — Must cover: build artifacts, config secrets, DB files, editor/OS noise, AND all of the above.
 5. **Commit cleanup** — `git commit -m "chore: pre-publish cleanup"`
 
-This step applies AFTER all implementation phases are complete and BEFORE the first `git push`.
+This step applies AFTER all implementation phases are complete and BEFORE the audit (Rule 8).
+
+## Pre-Push Audit (Rule 8)
+
+After cleanup, spawn a **separate** agent (not the one that wrote the code) to independently audit the project before pushing. Fresh eyes catch what the author misses.
+
+### Audit Agent Task Template
+
+```
+Audit the project at {repo_root} for CI and build readiness. You are NOT the author — you are the reviewer. Be thorough and skeptical.
+
+## Checks (do ALL of them):
+
+### 1. Dead path references
+Scan all source files for references to paths that don't exist in git:
+  - include_bytes!, include_str!, mod declarations, path imports
+  - Any hardcoded absolute paths (/home/*, /tmp/*)
+  - References to directories removed from git but present locally
+
+### 2. .gitignore vs Dockerfile cross-check
+  - List all gitignored files that exist locally (excluding target/, node_modules/)
+  - Read the Dockerfile — verify every COPY source is tracked in git
+  - Flag any mismatch
+
+### 3. Build verification
+  - cargo build --workspace --locked (or equivalent)
+  - cargo test --workspace
+  - If Dockerfile exists: verify COPY sources, verify base image tags
+
+### 4. Residual issues
+  - grep for TODO, FIXME, HACK, unimplemented!, todo!
+  - Check for secrets/tokens accidentally committed
+  - Verify CI workflow files reference correct branches and paths
+
+### 5. Fix and commit
+  - Fix any issues found
+  - cargo check/build/test after fixes
+  - git add -A && git commit -m "fix: pre-push audit (DD-{dd_id})"
+  - If nothing to fix: output "AUDIT CLEAN" with investigation summary
+```
+
+### Why a separate agent?
+
+The implementation agent has "author blindness" — it wrote the code, so it assumes its own paths and context. A fresh agent only sees what's in git, catches:
+- References to locally-present but git-ignored files (e.g. `bot/` directory)
+- .gitignore rules that are too broad (e.g. `*.sql` blocking `migrations/`)
+- Dockerfile assumptions that only work locally
 
 ## Checklist
 
@@ -95,4 +142,5 @@ This step applies AFTER all implementation phases are complete and BEFORE the fi
 4. Spawn implementation agent (`{implement_model}`, 43200 s timeout) → code + commit
 5. Verify: .gitignore / build / test / two commits / DD status → Implemented
 6. **Pre-publish cleanup** (Rule 7) — remove internal docs, legacy source, temp files
-7. Push to remote + report results
+7. **Pre-push audit** (Rule 8) — spawn independent agent to verify build + CI readiness
+8. Push to remote + report results
