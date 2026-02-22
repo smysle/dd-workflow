@@ -97,7 +97,7 @@ Output using this handoff format:
 - Project-specific docs: `{repo_root}/docs/design/`
 
 ### Context Gathering Budget
-- **First round: 5–8 tool calls max** for reading/exploring the codebase.
+- **First round: 10–18 tool calls max** for reading/exploring the codebase.
 - If more are needed, record why in the plan output.
 - Prefer targeted queries (`grep`, `find`, read specific files) over directory-level scans.
 - **Early stop:** once you can name the specific files/functions to modify, stop exploring and start coding.
