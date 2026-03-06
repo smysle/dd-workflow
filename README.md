@@ -16,6 +16,21 @@ Requirement → [Design Agent] DesignDoc → Human Review → [Implementation Ag
 | **Design Agent** | Researches codebase, writes the DesignDoc, commits |
 | **Implementation Agent** | Reads the doc, plans, implements, tests, commits |
 
+## Core Model Policy
+
+### Mainline (default)
+- **Design Agent** → `openai/gpt-5.4` + `thinking: xhigh`
+- **Implementation Agent** → `openai/gpt-5.4` + `thinking: xhigh`
+
+### Optional specialist lanes
+- **Cheap exploration / summaries / FAQ** → `step-3.5-flash`
+- **Plan review / second opinion** → `kimi-k2.5`
+- **Long-document synthesis** → `minimax-m2.5`
+- **Heavy multimodal review** → `gemini-3.1-pro`
+- **Light multimodal extraction** → `gemini-3-flash-preview`
+
+See `references/WORKFLOW.md` for the core DD flow, and the workspace-level `docs/design/MULTI_MODEL_ROUTING.md` for concrete routing patterns and spawn templates.
+
 ## 6 Core Rules
 
 1. **Plan Mode** — Research first, then plan. Never jump straight into code.
@@ -54,8 +69,8 @@ dd-workflow/
 ├── scripts/
 │   └── allocate-dd-id.sh     # Atomic DD-ID allocator (reads/increments .next-id)
 └── references/
-    ├── WORKFLOW.md            # Task templates for design & implementation agents
-    └── TEMPLATE.md            # 8-section DesignDoc template
+    ├── WORKFLOW.md           # Task templates for design & implementation agents
+    └── TEMPLATE.md           # 8-section DesignDoc template
 ```
 
 ## Quick Start
@@ -77,8 +92,8 @@ All templates use variables — no hardcoded models or paths:
 
 | Variable | Description |
 |----------|-------------|
-| `{design_model}` | Model for design tasks (e.g. `claude-opus-4`) |
-| `{implement_model}` | Model for implementation (e.g. `codex-1`) |
+| `{design_model}` | Model for design tasks (e.g. `openai/gpt-5.4`) |
+| `{implement_model}` | Model for implementation (e.g. `openai/gpt-5.4`) |
 | `{author_name}` / `{author_email}` | Git author for commits |
 | `{workspace}` | Your OpenClaw workspace root |
 | `{repo_root}` | Target project repository root |

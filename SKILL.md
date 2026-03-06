@@ -32,22 +32,31 @@ structured design → review → implement → verify cycle.
 | Role | Responsibility | Suggested Model |
 |------|---------------|-----------------|
 | **Orchestrator** | Allocate ID, spawn agents, route reviews, accept deliverables | You (the main agent) |
-| **Design Agent** | Research codebase, write DesignDoc, commit | `{design_model}` |
-| **Implementation Agent** | Read doc, output plan, implement, test, commit | `{implement_model}` |
+| **Design Agent** | Research codebase, write DesignDoc, commit | `openai/gpt-5.4` + `thinking: xhigh` |
+| **Implementation Agent** | Read doc, output plan, implement, test, commit | `openai/gpt-5.4` + `thinking: xhigh` |
+
+### Optional Specialist Lanes
+
+- **Cheap exploration / summaries / FAQ** → `step-3.5-flash`
+- **Plan review / second opinion** → `kimi-k2.5`
+- **Long-document synthesis** → `minimax-m2.5`
+- **Heavy multimodal review** → `gemini-3.1-pro`
+- **Light multimodal extraction** → `gemini-3-flash-preview`
 
 The orchestrator dispatches tasks using the templates in
-`references/WORKFLOW.md`. Models are suggestions — any capable model works.
+`references/WORKFLOW.md`. For concrete workspace-level routing rules and
+`sessions_spawn` templates, see `docs/design/MULTI_MODEL_ROUTING.md`.
 
 ## Quick Start (5 Steps)
 
 - [ ] **1. Allocate ID** — `bash {workspace}/docs/design/allocate-dd-id.sh <slug>`
       (first run in a new repo: copy script + TEMPLATE.md into `{repo_root}/docs/design/`)
-- [ ] **2. Spawn Design Agent** — Hand it the Claude Task template from
+- [ ] **2. Spawn Design Agent** — Hand it the Design Task template from
       `references/WORKFLOW.md` with the requirement, DD ID, and slug filled in.
       Agent writes the doc and commits.
 - [ ] **3. Review** — Present the doc to the user for approval. Gate on this —
       no implementation without sign-off.
-- [ ] **4. Spawn Implementation Agent** — Hand it the Codex Task template.
+- [ ] **4. Spawn Implementation Agent** — Hand it the Implementation Task template.
       Agent reads the doc, outputs a plan, implements, tests, and commits.
       Recommended timeout: 43200 s (12 h).
 - [ ] **5. Verify** — Check: `.gitignore` present, build passes, tests pass,
