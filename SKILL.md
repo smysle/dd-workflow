@@ -32,8 +32,8 @@ structured design → review → implement → verify cycle.
 | Role | Responsibility | Suggested Model |
 |------|---------------|-----------------|
 | **Orchestrator** | Allocate ID, spawn agents, route reviews, accept deliverables | You (the main agent) |
-| **Design Agent** | Research codebase, write DesignDoc, commit | `openai/gpt-5.4` + `thinking: xhigh` |
-| **Implementation Agent** | Read doc, output plan, implement, test, commit | `openai/gpt-5.4` + `thinking: xhigh` |
+| **Design Agent** | Research codebase, write DesignDoc, commit | `openai/gpt-5.4` + `thinking: high` |
+| **Implementation Agent** | Read doc, output plan, implement, test, commit | `openai/gpt-5.4` + `thinking: high` |
 
 ### Optional Specialist Lanes
 

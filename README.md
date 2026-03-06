@@ -19,8 +19,8 @@ Requirement → [Design Agent] DesignDoc → Human Review → [Implementation Ag
 ## Core Model Policy
 
 ### Mainline (default)
-- **Design Agent** → `openai/gpt-5.4` + `thinking: xhigh`
-- **Implementation Agent** → `openai/gpt-5.4` + `thinking: xhigh`
+- **Design Agent** → `openai/gpt-5.4` + `thinking: high`
+- **Implementation Agent** → `openai/gpt-5.4` + `thinking: high`
 
 ### Optional specialist lanes
 - **Cheap exploration / summaries / FAQ** → `step-3.5-flash`
