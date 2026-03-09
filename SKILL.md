@@ -27,21 +27,26 @@ structured design → review → implement → verify cycle.
 6. **Log deviations** — Any departure from the doc must be recorded in §8
    (Decision Log).
 
-## Roles
+## Roles (7-Role Compact)
 
-| Role | Responsibility | Suggested Model |
-|------|---------------|-----------------|
-| **Orchestrator** | Allocate ID, spawn agents, route reviews, accept deliverables | You (the main agent) |
-| **Design Agent** | Research codebase, write DesignDoc, commit | `openai/gpt-5.4` + `thinking: high` |
-| **Implementation Agent** | Read doc, output plan, implement, test, commit | `openai/gpt-5.4` + `thinking: high` |
+Assign by **capability**, not by job title — one model per role, the
+orchestrator picks the right one based on context.
 
-### Optional Specialist Lanes
+| Role | Suggested Model | Responsibility |
+|------|----------------|----------------|
+| **Orchestrator** | Main agent (e.g. Claude Opus 4.6) | Understand requirements, decompose tasks, dispatch, accept deliverables |
+| **Feasibility Review** | `gemini-3.1-pro` | Requirement analysis, hidden-risk discovery, feasibility assessment |
+| **Design Review** | `gemini-3.1-pro` | Architecture / security review, UI / design-mockup review (multimodal) |
+| **Design + Implementation** | `openai/gpt-5.4` + `thinking: high` | Write DesignDoc, write code, commit |
+| **Grunt Work** | `step-3.5-flash` | Code exploration, research, quick Q&A, simple tasks |
+| **Long Document** | `minimax-m2.5` | Long-form document generation / consolidation (rate-limit: 5 req/min) |
+| **Plan Review** | `kimi-k2.5` | Evaluate plan completeness, second opinion |
 
-- **Cheap exploration / summaries / FAQ** → `step-3.5-flash`
-- **Plan review / second opinion** → `kimi-k2.5`
-- **Long-document synthesis** → `minimax-m2.5`
-- **Heavy multimodal review** → `gemini-3.1-pro`
-- **Light multimodal extraction** → `gemini-3-flash-preview`
+### Supplementary
+
+- **Light multimodal** → `gemini-3-flash-preview` (when 3.1 Pro is overkill)
+- Models are suggestions — swap freely based on your provider setup.
+- The same model never needs two roles; the orchestrator decides by task context.
 
 The orchestrator dispatches tasks using the templates in
 `references/WORKFLOW.md`. For concrete workspace-level routing rules and
