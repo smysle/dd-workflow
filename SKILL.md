@@ -89,3 +89,8 @@ The orchestrator dispatches tasks using the templates in
 5. **Timeout matters for implementation.** Complex features need long timeouts
    (`runTimeoutSeconds: 43200`). The default is usually too short for full
    build + test cycles.
+6. **Always set `cwd` in sessions_spawn.** Point at the target repo, not the
+   orchestrator workspace. Prevents agents from reading unrelated context.
+7. **Sub-agent "failed" ≠ code failed.** If a sub-agent errors during its
+   final summary, check `git log` + `npm test` before retrying — the work
+   may already be done.

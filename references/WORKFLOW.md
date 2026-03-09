@@ -96,11 +96,10 @@ Output using this handoff format:
 - Global assets (template, scripts, ID counter): `{workspace}/docs/design/`
 - Project-specific docs: `{repo_root}/docs/design/`
 
-### Context Gathering Budget
-- **First round: 10–18 tool calls max** for reading/exploring the codebase.
-- If more are needed, record why in the plan output.
+### Context Gathering
 - Prefer targeted queries (`grep`, `find`, read specific files) over directory-level scans.
 - **Early stop:** once you can name the specific files/functions to modify, stop exploring and start coding.
+- No artificial tool-call limits — explore as much as needed, but don't scan aimlessly.
 
 ### Code Quality
 - **Keep files < ~500 LOC.** If a file grows past this, split/refactor. Large files are hard to review and maintain.
@@ -113,6 +112,25 @@ Output using this handoff format:
 - **No destructive ops** without explicit consent: `reset --hard`, `clean`, `force push`, `rebase` on shared branches.
 - **No amend** unless asked.
 - **Multi-agent awareness:** Before editing, run `git status` / `git diff` to check for unrecognized changes. If found, assume another agent made them — continue your work, ship small commits, and flag conflicts to the orchestrator instead of overwriting.
+
+### Spawn Discipline
+- **Always specify `cwd`** when calling `sessions_spawn` — point it at `{repo_root}` so the agent
+  wakes up in the target project, not the orchestrator's workspace. This prevents agents from
+  reading unrelated files (SOUL.md, MEMORY.md, etc.) and leaking context.
+  ```
+  sessions_spawn(model: "...", cwd: "/path/to/repo", task: "...")
+  ```
+- **One task per spawn.** Don't pack multiple unrelated changes into one sub-agent run.
+
+### Sub-Agent Failure Protocol
+- If a sub-agent reports failure or times out:
+  1. **Check the repo state first** — `git log`, `git status`, `npm test`. The agent may have
+     partially succeeded (code committed but summary generation failed).
+  2. **Don't blindly re-run** — if partial work exists, spawn a new agent to finish from where
+     it left off rather than repeating everything.
+  3. **Escalate to user** if the same task fails twice — don't loop.
+- Known gotcha: sub-agents that fail during their final summary (e.g. `unexpected EOF`) may
+  report as "failed" even though all code/tests/commits are fine. Always verify before retrying.
 
 ## Variables
 
